@@ -279,10 +279,10 @@
 const SUPABASE_URL = "https://aghdzwsikdbjxhwsxmeo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Q6q-1EdpVbw-wpx2R4M1fA_4485s1FS";
 
-let supabase = null;
+let db = null;
 try {
   if (!window.supabase) throw new Error("Supabase library did not load from CDN.");
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 } catch (err) {
   console.error("Supabase init failed:", err);
   const banner = document.createElement("div");
@@ -339,7 +339,7 @@ function populateExerciseSelect(day) {
 document.getElementById("workout-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const statusEl = document.getElementById("w-status");
-  if (!supabase) { statusEl.style.color = "#E06A6A"; statusEl.textContent = "Not connected to Supabase — check config."; return; }
+  if (!db) { statusEl.style.color = "#E06A6A"; statusEl.textContent = "Not connected to Supabase — check config."; return; }
   if (!selectedDay) { statusEl.textContent = "Pick a day first."; statusEl.style.color = "#E06A6A"; return; }
 
   const payload = {
@@ -353,7 +353,7 @@ document.getElementById("workout-form").addEventListener("submit", async (e) => 
     notes: document.getElementById("w-notes").value || null
   };
 
-  const { error } = await supabase.from("logs").insert(payload);
+  const { error } = await db.from("logs").insert(payload);
   if (error) {
     statusEl.style.color = "#E06A6A";
     statusEl.textContent = "Couldn't save: " + error.message;
@@ -376,8 +376,8 @@ function numOrNull(id) {
 
 async function loadRecentEntries() {
   const tbody = document.getElementById("recent-rows");
-  if (!supabase) { tbody.innerHTML = `<tr><td colspan="7" class="empty-note">Not connected to Supabase.</td></tr>`; return; }
-  const { data, error } = await supabase
+  if (!db) { tbody.innerHTML = `<tr><td colspan="7" class="empty-note">Not connected to Supabase.</td></tr>`; return; }
+  const { data, error } = await db
     .from("logs")
     .select("*")
     .eq("entry_type", "workout")
@@ -408,13 +408,13 @@ bwDateInput.value = new Date().toISOString().slice(0, 10);
 document.getElementById("bw-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const statusEl = document.getElementById("bw-status");
-  if (!supabase) { statusEl.style.color = "#E06A6A"; statusEl.textContent = "Not connected to Supabase — check config."; return; }
+  if (!db) { statusEl.style.color = "#E06A6A"; statusEl.textContent = "Not connected to Supabase — check config."; return; }
   const payload = {
     entry_date: bwDateInput.value,
     entry_type: "bodyweight",
     body_weight: Number(document.getElementById("bw-weight").value)
   };
-  const { error } = await supabase.from("logs").insert(payload);
+  const { error } = await db.from("logs").insert(payload);
   if (error) {
     statusEl.style.color = "#E06A6A";
     statusEl.textContent = "Couldn't save: " + error.message;
@@ -429,8 +429,8 @@ document.getElementById("bw-form").addEventListener("submit", async (e) => {
 
 let bwChartInstance = null;
 async function loadBodyweightChart() {
-  if (!supabase) return;
-  const { data, error } = await supabase
+  if (!db) return;
+  const { data, error } = await db
     .from("logs")
     .select("entry_date, body_weight")
     .eq("entry_type", "bodyweight")
@@ -459,14 +459,14 @@ async function loadBodyweightChart() {
 /* ---------------- dashboard ---------------- */
 async function loadDashboard() {
   const container = document.getElementById("dashboard-groups");
-  if (!supabase) { container.innerHTML = `<div class="card"><p class="empty-note">Not connected to Supabase.</p></div>`; return; }
-  const { data, error } = await supabase
+  if (!db) { container.innerHTML = `<div class="card"><p class="empty-note">Not connected to Supabase.</p></div>`; return; }
+  const { data, error } = await db
     .from("logs")
     .select("*")
     .eq("entry_type", "workout")
     .order("entry_date", { ascending: true });
 
-  const bw = await supabase
+  const bw = await db
     .from("logs")
     .select("body_weight, entry_date")
     .eq("entry_type", "bodyweight")
